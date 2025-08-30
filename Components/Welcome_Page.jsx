@@ -22,7 +22,7 @@ const Welcome_Page = () => {
 
 
 <View style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",marginTop:height*0.05}}>
-<Button_comp color={"#38E07A"} fontColor={"black"} title={"Create New Story"} job={""}/>
+<Button_comp color={"#38E07A"} fontColor={"black"} title={"Create New Story"} job={"story_details"}/>
 <View style={{marginTop:20}}>
 <Button_comp color={"#264533"} fontColor={"white"} title={"Create New Story"} job={""}/>
 </View>

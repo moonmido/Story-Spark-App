@@ -33,17 +33,17 @@ const [storyWorld,setStoryWorld] = useState("");
 
 <View style={{marginBottom:height*0.04}}>
 <Text style={{color:"white",fontSize:17}}>Character Name</Text>
-<TextInput onChangeText={(e)=>setCharName(e)} value={charName} placeholder='Enter character name' placeholderTextColor={"#96c5a9"} style={{backgroundColor:"#366348",width:width*0.9,height:height*0.08,marginTop:height*0.02,borderRadius:15,paddingLeft:15,fontSize:17,borderWidth:1,borderColor:"#96c5a9"}}/>
+<TextInput onChangeText={(e)=>setCharName(e)} value={charName} placeholder='Enter character name' placeholderTextColor={"#96c5a9"} style={styles.text_inp_container}/>
 </View>
 
 <View style={{marginBottom:height*0.04}}>
 <Text style={{color:"white",fontSize:17}}>Character Type</Text>
-<TextInput onChangeText={(e)=>setCharType(e)} value={charType} placeholder='Enter character type' placeholderTextColor={"#96c5a9"} style={{backgroundColor:"#366348",width:width*0.9,height:height*0.08,marginTop:height*0.02,borderRadius:15,paddingLeft:15,fontSize:17,borderWidth:1,borderColor:"#96c5a9"}}/>
+<TextInput onChangeText={(e)=>setCharType(e)} value={charType} placeholder='Enter character type' placeholderTextColor={"#96c5a9"} style={styles.text_inp_container}/>
 </View>
 
 <View style={{marginBottom:height*0.04}}>
 <Text style={{color:"white",fontSize:17}}>Story World</Text>
-<TextInput onChangeText={(e)=>setStoryWorld(e)} value={storyWorld} placeholder='Enter story world' placeholderTextColor={"#96c5a9"} style={{backgroundColor:"#366348",width:width*0.9,height:height*0.08,marginTop:height*0.02,borderRadius:15,paddingLeft:15,fontSize:17,borderWidth:1,borderColor:"#96c5a9"}}/>
+<TextInput onChangeText={(e)=>setStoryWorld(e)} value={storyWorld} placeholder='Enter story world' placeholderTextColor={"#96c5a9"} style={styles.text_inp_container}/>
 </View>
 
 </View>
@@ -62,6 +62,18 @@ const styles = StyleSheet.create({
   width,
   height:"100%",
   backgroundColor:"#122117"
+  },
+  text_inp_container:{
+    backgroundColor:"#366348",
+    width:width*0.9,
+    height:height*0.08,
+    marginTop:height*0.02,
+    borderRadius:15,
+    paddingLeft:15,
+    fontSize:17,
+    borderWidth:1,
+    borderColor:"#96c5a9",
+    color:"white"
   }
 });
 
