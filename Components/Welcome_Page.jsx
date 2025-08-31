@@ -13,7 +13,7 @@ const Welcome_Page = () => {
 <View style={{display:"flex",flexDirection:"row" , justifyContent:"center",alignItems:"center"}}>
 
 <View>
-<Image source={{uri:url.welcome_page_back}} style={{height:height*0.45 , width:width,marginTop:-height*0.05}}/>
+<Image source={{uri:url.welcome_page_back}} style={{height:height*0.45 , width:width,marginTop:-height*0.05,borderBottomLeftRadius:15,borderBottomRightRadius:15}}/>
 
 <View style={{marginTop:height*0.03}}>
 <Text style={[styles.text_container,{fontWeight:"800",fontSize:25}]}>Welcome to Story Spark!</Text>
@@ -24,8 +24,12 @@ const Welcome_Page = () => {
 <View style={{display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",marginTop:height*0.05}}>
 <Button_comp color={"#38E07A"} fontColor={"black"} title={"Create New Story"} job={"story_details"}/>
 <View style={{marginTop:20}}>
-<Button_comp color={"#264533"} fontColor={"white"} title={"Create New Story"} job={""}/>
+<Button_comp color={"#264533"} fontColor={"white"} title={"Story Library"} job={"my_stories"}/>
 </View>
+<View style={{marginTop:20}}>
+<Button_comp color={"#001408ff"} fontColor={"white"} title={"Settings"} job={"settings"}/>
+</View>
+
 </View>
 
 
