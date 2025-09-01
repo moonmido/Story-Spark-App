@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   SafeAreaView,
   StatusBar,
   Dimensions,
+  Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import url from './URL/all_urls.json';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +20,23 @@ import { useNavigation } from '@react-navigation/native';
 
 const {width,height} = Dimensions.get("window");
 
-const SettingsItem = ({ icon, title, subtitle, onPress, large = false, iconSize = 24 }) => (
+// Languages list
+const LANGUAGES = [
+  { id: 'en', name: 'English', flag: '🇺🇸' },
+  { id: 'es', name: 'Español', flag: '🇪🇸' },
+  { id: 'fr', name: 'Français', flag: '🇫🇷' },
+  { id: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { id: 'it', name: 'Italiano', flag: '🇮🇹' },
+  { id: 'pt', name: 'Português', flag: '🇵🇹' },
+  { id: 'ru', name: 'Русский', flag: '🇷🇺' },
+  { id: 'ja', name: '日本語', flag: '🇯🇵' },
+  { id: 'ko', name: '한국어', flag: '🇰🇷' },
+  { id: 'zh', name: '中文', flag: '🇨🇳' },
+  { id: 'ar', name: 'العربية', flag: '🇸🇦' },
+  { id: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
+];
+
+const SettingsItem = ({ icon, title, subtitle, onPress, large = false, iconSize = 24, showArrow = false }) => (
   <TouchableOpacity style={[styles.settingsItem, large && styles.settingsItemLarge]} onPress={onPress}>
     <View style={[styles.settingsIcon, large && styles.settingsIconLarge]}>
       <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
@@ -25,6 +44,21 @@ const SettingsItem = ({ icon, title, subtitle, onPress, large = false, iconSize 
     <View style={styles.settingsContent}>
       <Text style={styles.settingsTitle}>{title}</Text>
       {subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
+    </View>
+    {showArrow && (
+      <Ionicons name="chevron-forward" size={20} color="#96c5a9" />
+    )}
+  </TouchableOpacity>
+);
+
+const LogoutItem = ({ onPress }) => (
+  <TouchableOpacity style={styles.logoutItem} onPress={onPress}>
+    <View style={styles.logoutIcon}>
+      <Ionicons name="log-out-outline" size={24} color="#FF4444" />
+    </View>
+    <View style={styles.settingsContent}>
+      <Text style={styles.logoutTitle}>Logout</Text>
+      <Text style={styles.logoutSubtitle}>Sign out of your account</Text>
     </View>
   </TouchableOpacity>
 );
@@ -50,8 +84,11 @@ const SectionHeader = ({ title }) => (
 
 export default function SettingsScreen() {
     const navigation = useNavigation();
+    const [selectedLanguage, setSelectedLanguage] = useState('en'); // Default to English
+    const [showLanguageModal, setShowLanguageModal] = useState(false);
+  
   const handleBackPress = () => {
-navigation.navigate("welcome")
+    navigation.navigate("welcome")
   };
 
   const handleProfilePress = () => {
@@ -60,8 +97,19 @@ navigation.navigate("welcome")
   };
 
   const handleLanguagePress = () => {
-    console.log('Audio Language pressed');
-    // Navigate to language settings
+    setShowLanguageModal(true);
+  };
+
+  const handleLanguageSelect = (language) => {
+    setSelectedLanguage(language.id);
+    setShowLanguageModal(false);
+    console.log('Language changed to:', language.name);
+    // Add your language change logic here
+    // Save to AsyncStorage, update app language, etc.
+  };
+
+  const getCurrentLanguage = () => {
+    return LANGUAGES.find(lang => lang.id === selectedLanguage) || LANGUAGES[0];
   };
 
   const handleHelpPress = () => {
@@ -72,6 +120,31 @@ navigation.navigate("welcome")
   const handleContactPress = () => {
     console.log('Contact Us pressed');
     // Navigate to contact screen
+  };
+
+  const handleLogoutPress = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Yes",
+          style: "destructive",
+          onPress: () => {
+            console.log('User logged out');
+            // Add your logout logic here
+            // Clear user session, tokens, etc.
+            // Navigate to login/welcome screen
+            navigation.navigate("Sign_In"); // or whatever your login screen is called
+          }
+        }
+      ],
+      { cancelable: false }
+    );
   };
 
   return (
@@ -98,9 +171,10 @@ navigation.navigate("welcome")
         <SettingsItem
           icon="globe-outline"
           title="Audio Language"
-          subtitle="Choose your preferred language"
+          subtitle={`${getCurrentLanguage().flag} ${getCurrentLanguage().name}`}
           onPress={handleLanguagePress}
           large={true}
+          showArrow={true}
         />
 
         {/* Support Section */}
@@ -117,7 +191,58 @@ navigation.navigate("welcome")
           onPress={handleContactPress}
           iconSize={24}
         />
+
+        {/* Logout Section */}
+        <SectionHeader title="Account Actions" />
+        <LogoutItem onPress={handleLogoutPress} />
+        
+        {/* Add some bottom padding */}
+        <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={showLanguageModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowLanguageModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Language</Text>
+              <TouchableOpacity 
+                onPress={() => setShowLanguageModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+            
+            <FlatList
+              data={LANGUAGES}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.languageItem,
+                    selectedLanguage === item.id && styles.selectedLanguageItem
+                  ]}
+                  onPress={() => handleLanguageSelect(item)}
+                >
+                  <Text style={styles.languageFlag}>{item.flag}</Text>
+                  <Text style={styles.languageName}>{item.name}</Text>
+                  {selectedLanguage === item.id && (
+                    <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -236,5 +361,90 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
     lineHeight: 18,
     marginTop: 2,
+  },
+  // Logout specific styles
+  logoutItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#122118',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minHeight: 56,
+  },
+  logoutIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 68, 68, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16,
+  },
+  logoutTitle: {
+    color: '#FF4444',
+    fontSize: 17,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  logoutSubtitle: {
+    color: '#FF8888',
+    fontSize: 15,
+    fontWeight: 'normal',
+    lineHeight: 18,
+    marginTop: 2,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#122118',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: height * 0.7,
+    paddingBottom: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  selectedLanguageItem: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  languageFlag: {
+    fontSize: 24,
+    marginRight: 15,
+  },
+  languageName: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '500',
+    flex: 1,
   },
 });
