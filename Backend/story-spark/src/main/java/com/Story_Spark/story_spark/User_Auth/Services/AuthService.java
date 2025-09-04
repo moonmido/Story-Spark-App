@@ -48,7 +48,7 @@ public class AuthService {
         userRepresentation.setFirstName(myUser.getFirstname());
         userRepresentation.setLastName(myUser.getLastname());
         userRepresentation.setEnabled(true);
-        userRepresentation.setCreatedTimestamp(System.currentTimeMillis());
+        userRepresentation.setCreatedTimestamp(new Date().getTime());
 
         CredentialRepresentation credentialRepresentation = new CredentialRepresentation();
         credentialRepresentation.setTemporary(false);
