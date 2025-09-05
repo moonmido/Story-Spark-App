@@ -9,6 +9,7 @@ import com.Story_Spark.story_spark.Story_Generation.Outputs.GeneratedStory;
 import com.Story_Spark.story_spark.Story_Generation.Prompts.GenerationSysPrompt;
 import com.Story_Spark.story_spark.Story_Generation.Prompts.ValidatingStoryContentPrompt;
 import com.Story_Spark.story_spark.Story_Generation.Repositories.MyStoryRepo;
+import com.Story_Spark.story_spark.UserProfile.Services.ProfileService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -54,7 +55,7 @@ public class StoryService {
             if(entity==null) throw new StoryGenerationFailedException();
             if(!ValidateContent(entity.getStory(),entity.getStoryTitle())) throw new ContentNotValideException();
 
-            MyStory myStory = new MyStory(
+        MyStory myStory = new MyStory(
                     userId,
                     storyDetails.characterType(),
                     storyDetails.characterName(),
@@ -62,7 +63,7 @@ public class StoryService {
                     entity.getStoryTitle(),
                     new Date(),
                     storyDetails.StoryWorld(),
-                    storyDetails.storyLanguage()
+                    ProfileService.GetStoryLanguage(userId)
             );
             publishStory(myStory);
             return entity;
@@ -84,14 +85,12 @@ public class StoryService {
         return isValid != null && isValid;
     }
 
-    public boolean publishStory(MyStory myStory) {
+    public void publishStory(MyStory myStory) {
         if (myStory == null) {
             throw new IllegalArgumentException("Story cannot be null");
         }
-
         try {
-            MyStory saved = repo.save(myStory);
-            return saved.getStoryId() != null;
+             repo.save(myStory);
         } catch (Exception e) {
             throw new SavingNewStoryOnDBFailedException("Failed to save story", e);
         }
