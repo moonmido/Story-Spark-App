@@ -1,5 +1,6 @@
 package com.Story_Spark.story_spark.Authentication_and_Authorization.Configurations;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,10 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+
+    @Autowired
+    private JwtAuthConverter jwtAuthConverter;
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(){
@@ -32,6 +37,7 @@ public class SecurityConfig {
         })
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
+                .oauth2ResourceServer(oauth -> oauth.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtAuthConverter)))
                 .build();
     }
 

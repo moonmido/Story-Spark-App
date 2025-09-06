@@ -40,8 +40,12 @@ public class AuthService {
 
 
     public boolean register(MyUser myUser) {
-        if (myUser == null) throw new IllegalArgumentException();
-        if (myUser.getUsername().isEmpty() || myUser.getPassword().isEmpty()) throw new IllegalArgumentException();
+        if (myUser == null) throw new IllegalArgumentException("User object is null");
+        if (myUser.getUsername() == null || myUser.getUsername().isEmpty()
+                || myUser.getPassword() == null || myUser.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Username or password cannot be empty");
+        }
+
         UserRepresentation userRepresentation = new UserRepresentation();
         userRepresentation.setUsername(myUser.getUsername());
         userRepresentation.setEmail(myUser.getUsername());
@@ -59,19 +63,45 @@ public class AuthService {
 
         UsersResource usersResource = GetAllUsers();
         Response response = usersResource.create(userRepresentation);
-        if (response.getStatus() != 201) {
+
+        int status = response.getStatus();
+
+        if (status == 201) {
+
+            String userId = GetAllUsers()
+                    .searchByUsername(myUser.getUsername(), true)
+                    .get(0)
+                    .getId();
+
+            SendEmailVerificationToUser(userId);
+            return true;
+        } else if (status == 409) {
+            // User already exists
             return false;
+        } else {
+            throw new RuntimeException("Keycloak returned error status: " + status);
         }
-        SendEmailVerificationToUser(userRepresentation.getId());
-        return true;
     }
 
 
+
     public void deactivateAccount(String userId) {
-        if (userId == null) throw new IllegalArgumentException();
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new IllegalArgumentException("User ID cannot be null or empty");
+        }
+
         UsersResource usersResource = GetAllUsers();
-        UserRepresentation representation = usersResource.get(userId).toRepresentation();
+        UserResource userResource = usersResource.get(userId);
+
+        if (userResource == null) {
+            throw new RuntimeException("User not found with ID: " + userId);
+        }
+
+        UserRepresentation representation = userResource.toRepresentation();
         representation.setEnabled(false);
+
+        // مهم: نحدث الـ user في Keycloak
+        userResource.update(representation);
     }
 
     public void SendEmailVerificationToUser(String userId) {
