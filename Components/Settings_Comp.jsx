@@ -16,6 +16,7 @@ import {
 import url from './URL/all_urls.json';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const {width,height} = Dimensions.get("window");
@@ -136,10 +137,8 @@ export default function SettingsScreen() {
           style: "destructive",
           onPress: () => {
             console.log('User logged out');
-            // Add your logout logic here
-            // Clear user session, tokens, etc.
-            // Navigate to login/welcome screen
-            navigation.navigate("Sign_In"); // or whatever your login screen is called
+             AsyncStorage.removeItem("access_token")
+            navigation.navigate("signin"); 
           }
         }
       ],

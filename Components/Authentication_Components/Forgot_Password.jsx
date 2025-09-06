@@ -16,34 +16,45 @@ const Forgot_Password = () => {
   };
 
   const handleSendVerification = async () => {
-    if (!email.trim()) {
-      Alert.alert('Error', 'Please enter your email address');
-      return;
+  if (!email.trim()) {
+    Alert.alert('Error', 'Please enter your email address');
+    return;
+  }
+
+  if (!validateEmail(email)) {
+    Alert.alert('Error', 'Please enter a valid email address');
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    const response = await fetch('http://192.168.100.7:8080/api/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email })
+    });
+
+    const data = await response.json();
+
+    // ✅ Show success screen only if backend explicitly says success = true
+    if (data.success === true) {
+      setIsEmailSent(true);
+    } else {
+      setIsEmailSent(false); // stay in the same screen
+      Alert.alert('Error', data.message || 'Failed to send verification email');
     }
 
-    if (!validateEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
+  } catch (error) {
+    setIsEmailSent(false);
+    Alert.alert('Error', 'Failed to send verification email. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    setIsLoading(true);
-    
-    try {
-      // Add your forgot password API call here
-      // Example: await forgotPasswordAPI(email);
-      
-      // Simulate API call delay
-      setTimeout(() => {
-        setIsLoading(false);
-        setIsEmailSent(true);
-      }, 2000);
-      
-      console.log('Verification email sent to:', email);
-    } catch (error) {
-      setIsLoading(false);
-      Alert.alert('Error', 'Failed to send verification email. Please try again.');
-    }
-  };
 
   const handleResendEmail = () => {
     setIsEmailSent(false);

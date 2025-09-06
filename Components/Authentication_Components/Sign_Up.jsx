@@ -21,10 +21,40 @@ const Sign_Up = () => {
     }));
   };
 
-  const handleSignUp = () => {
-    // Add your sign up logic here
-    console.log('Sign up data:', formData);
-  };
+  const handleSignUp = async () => {
+  if (formData.password !== formData.confirmPassword || formData.password.length < 6) {
+    alert("Passwords do not match or password is too short (min 6 characters)");
+    return;
+  }
+
+  try {
+    const response = await fetch("http://192.168.100.7:8080/api/auth/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: formData.email,
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        password: formData.password,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to register user");
+    }
+
+    const data = await response.json();
+    const status = data.message;
+    alert(status)
+    navigation.navigate("signin")
+    
+  } catch (error) {
+    alert("Error: " + error.message);
+  }
+};
+
   const navigation = useNavigation();
 
   return (

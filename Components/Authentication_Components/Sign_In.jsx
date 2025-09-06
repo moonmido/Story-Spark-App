@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, SafeAreaView, Dimensions, Image, StatusBar, Tex
 import React, { useState } from 'react'
 import url from '../URL/all_urls.json';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {width, height} = Dimensions.get("window");
 
@@ -18,10 +19,49 @@ const Sign_In = () => {
     }));
   };
 
-  const handleSignIn = () => {
-    // Add your sign in logic here
-    console.log('Sign in data:', formData);
-  };
+  const handleSignIn = async () => {
+  if (!formData.email || !formData.password) {
+    alert("Please enter email and password");
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      "http://192.168.100.7:8181/realms/story-spark/protocol/openid-connect/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: "spark-client",      // public client (no secret)
+          grant_type: "password",
+          username: formData.email,
+          password: formData.password,
+        }).toString(),
+      }
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("Login failed:", err);
+      alert("Invalid credentials or server error");
+      return;
+    }
+
+    const data = await response.json();
+    
+    console.log("Access Token:", data.access_token);
+    await AsyncStorage.setItem("access_token", data.access_token);
+
+    alert("Login success 🎉");
+     navigation.navigate("welcome");
+  } catch (error) {
+    console.error("Network error:", error);
+    alert("Network error: " + error.message);
+  }
+};
+
 
   const handleForgotPassword = () => {
 navigation.navigate("forgot")
