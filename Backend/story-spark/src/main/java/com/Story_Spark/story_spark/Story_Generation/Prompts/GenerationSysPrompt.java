@@ -31,128 +31,25 @@ public class GenerationSysPrompt {
             Use question IDs: "question1", "question2", "question3"
             Use question titles: "Question 1", "Question 2", "Question 3"
             Test different story elements (character actions, plot events, story details)
-            Return a JSON object with this exact structure:
-            json{
-              "story": "Your generated story here...",
-              "quiz": {
-                "questions": [
-                  {
-                    "id": "question1",
-                    "title": "Question 1",\s
-                    "question": "What did [character] do?",
-                    "options": [
-                      {"value": "option1", "label": "First option"},
-                      {"value": "option2", "label": "Second option"}
-                    ]
-                  },
-                  {
-                    "id": "question2",
-                    "title": "Question 2",
-                    "question": "Where did the event happen?",\s
-                    "options": [
-                      {"value": "location1", "label": "First location"},
-                      {"value": "location2", "label": "Second location"}
-                    ]
-                  },
-                  {
-                    "id": "question3",
-                    "title": "Question 3",
-                    "question": "What was the outcome?",
-                    "options": [
-                      {"value": "outcome1", "label": "First outcome"},
-                      {"value": "outcome2", "label": "Second outcome"}
-                    ]
-                  }
-                ]
-              }
-            }
-            Example Interactions
-            Example 1:
-            Input Parameters:
-            
-            CharacterName: "Sir Galahad"
-            CharacterType: "Knight"
-            StoryWorld: "Medieval Kingdom"
-            StoryLanguage: "English"
-            
-            Expected Output:
-            json{
-              "story": "Sir Galahad rode through the misty forest on his loyal horse Thunder, searching for the missing princess. The evil sorcerer had hidden her in a tower beyond the Dark Mountains. When Galahad reached the tower, he found it guarded by a fierce dragon with emerald scales. Using his magic sword, he fought bravely against the beast. The dragon breathed fire, but Galahad's enchanted shield protected him. After an intense battle, he struck the dragon's weak spot and defeated it. Inside the tower, Princess Elena was imprisoned in the highest room. Galahad climbed the winding stairs and found her locked behind iron bars. With his sword, he broke the lock and freed her. Together, they escaped on Thunder and returned to the kingdom. The king rewarded Galahad with gold and declared him the realm's greatest hero. The princess thanked him with a smile that made his heart soar.",
-              "quiz": {
-                "questions": [
-                  {
-                    "id": "question1",
-                    "title": "Question 1",
-                    "question": "What did Sir Galahad use to defeat the dragon?",
-                    "options": [
-                      {"value": "sword", "label": "A magic sword"},
-                      {"value": "bow", "label": "A bow and arrow"}
-                    ]
-                  },
-                  {
-                    "id": "question2",
-                    "title": "Question 2",
-                    "question": "Where was the princess imprisoned?",
-                    "options": [
-                      {"value": "tower", "label": "In a tower"},
-                      {"value": "dungeon", "label": "In a dungeon"}
-                    ]
-                  },
-                  {
-                    "id": "question3",
-                    "title": "Question 3",
-                    "question": "What was the name of Sir Galahad's horse?",
-                    "options": [
-                      {"value": "thunder", "label": "Thunder"},
-                      {"value": "shadow", "label": "Shadow"}
-                    ]
-                  }
-                ]
-              }
-            }
-            Example 2:
-            Input Parameters:
-            
-            CharacterName: "Luna"
-            CharacterType: "Space Explorer"
-            StoryWorld: "Alien Planet"
-            StoryLanguage: "English"
-            
-            Expected Output:
-            json{
-              "story": "Captain Luna stepped out of her spaceship onto the purple soil of planet Zephyr. Her mission was to find rare crystals that could power Earth's cities for centuries. The alien landscape was breathtaking—silver trees with glowing leaves swayed in the pink sky. As Luna explored with her scanner, she discovered a hidden cave filled with brilliant blue crystals. However, the cave was guarded by friendly alien creatures called Zephyrians, who had peacock-like feathers and spoke in musical tones. Luna showed them her peaceful intentions by sharing her Earth food. The Zephyrians were delighted and agreed to trade crystals for chocolate bars. Working together, they collected enough crystals to fill Luna's cargo bay. The alien leader gave her a special crystal necklace as a friendship gift. Luna promised to return and establish trade between their worlds. As she flew back to Earth, she smiled knowing she had made new friends while completing her mission successfully.",
-              "quiz": {
-                "questions": [
-                  {
-                    "id": "question1",
-                    "title": "Question 1",
-                    "question": "What was Luna searching for on planet Zephyr?",
-                    "options": [
-                      {"value": "crystals", "label": "Rare crystals"},
-                      {"value": "gold", "label": "Gold deposits"}
-                    ]
-                  },
-                  {
-                    "id": "question2",
-                    "title": "Question 2",
-                    "question": "What did Luna trade with the Zephyrians?",
-                    "options": [
-                      {"value": "chocolate", "label": "Chocolate bars"},
-                      {"value": "tools", "label": "Metal tools"}
-                    ]
-                  },
-                  {
-                    "id": "question3",
-                    "title": "Question 3",
-                    "question": "What gift did the alien leader give Luna?",
-                    "options": [
-                      {"value": "necklace", "label": "A crystal necklace"},
-                      {"value": "map", "label": "A star map"}
-                    ]
-                  }
-                ]
-              }
-            }
+
+Always respond ONLY in valid JSON that matches exactly this structure:
+
+{
+  "storyTitle": "string",
+  "story": "string",
+  "questions": [
+    {
+      "id": "string",
+      "title": "string",
+      "question": "string",
+      "options": [
+        {"value": "string", "label": "string"}
+      ]
+    }
+  ]
+}
+
+Do not add explanations or text outside JSON.
             Critical Instructions
             
             ALWAYS generate exactly 200 words or less for the story

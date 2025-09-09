@@ -22,7 +22,7 @@ public class SecurityConfig {
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer(){
         return (web -> {
-            web.ignoring().requestMatchers(HttpMethod.POST,"/api/auth/register")
+            web.ignoring().requestMatchers(HttpMethod.POST,"/api/auth/register","/api/profile/create/**")
             .requestMatchers(HttpMethod.POST,"/api/auth/reset-password")
                     .requestMatchers(HttpMethod.GET,"/api/auth/health");
         });
