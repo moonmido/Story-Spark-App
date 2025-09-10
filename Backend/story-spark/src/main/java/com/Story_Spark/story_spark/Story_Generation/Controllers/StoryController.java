@@ -7,6 +7,7 @@ import com.Story_Spark.story_spark.Story_Generation.Services.StoryService;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.ContentNotValideException;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.SavingNewStoryOnDBFailedException;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.StoryGenerationFailedException;
+import com.Story_Spark.story_spark.User_Auth.MyExceptions.EmailNotVerifiedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,11 @@ public class StoryController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Story generation failed.");
         } catch (ContentNotValideException e) {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Generated story content is not valid.");
-        } catch (Exception e) {
+        }
+        catch (EmailNotVerifiedException em) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body("We need to verify your account first ,Please check your email");
+        }
+        catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error: " + e.getMessage());
         }
     }
@@ -58,7 +63,10 @@ public class StoryController {
      catch (ContentNotValideException c) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty List");
     }
-     catch (Exception e) {
+        catch (EmailNotVerifiedException em) {
+            return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body("We need to verify your account first ,Please check your email");
+        }
+        catch (Exception e) {
          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
     }
     }
