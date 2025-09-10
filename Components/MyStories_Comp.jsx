@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API Configuration
 const API_BASE_URL = 'http://192.168.100.7:8080'; 
-const USER_ID = localStorage.getItem("userId"); 
+const USER_ID =  AsyncStorage.getItem("userId"); 
 
 // Default placeholder image for stories without images
 const DEFAULT_STORY_IMAGE = 'https://lh3.googleusercontent.com/aida-public/AB6AXuADdGqH-YsFEwDKblqxcvp9icEr5WsVctmuTLw37VUnb7G4qDr_C9KKl36xX1EtgpegZ6JEZpkCGYV9h5ZHw9SIZBWc5rxVSlMKlnEX9qaNIUr4yVdy6jnMjHnw8R5E4AINc9DlLyEZcx5HjzPNhcgH_QwMJKpc5pX8E5tbIS674qfVNZCLAt0SOVSwr5hb78UI1IWAefTBuuzI6Ud-tCxw6G28vHwFwES-6C1yy806onCr0EPPyQVIiKnVqak-PUrIjclfRLg8Zw';

@@ -3,12 +3,13 @@ import React, { useState } from 'react'
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import Button_comp from '../Static-Components/Button_comp';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const {width,height} = Dimensions.get('window');
 
 // API Configuration
 const API_BASE_URL = 'http://192.168.100.7:8080'; 
-const USER_ID = localStorage.getItem("userId"); 
+const USER_ID = AsyncStorage.getItem("userId"); 
 
 const input_details = () => {
   const navigation = useNavigation();

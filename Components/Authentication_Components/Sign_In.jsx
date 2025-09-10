@@ -3,6 +3,8 @@ import React, { useState } from 'react'
 import url from '../URL/all_urls.json';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import scheduleTokenRefresh from './AuthService/scheduleTokenRefresh';
+
 
 const {width, height} = Dimensions.get("window");
 
@@ -53,7 +55,13 @@ const Sign_In = () => {
     
     const decoded = jwtDecode(data.access_token);
     const userId = decoded.sub; 
-    localStorage.setItem("userId",userId)
+    const refreshToken = data.refresh_token;
+
+    await AsyncStorage.setItem("refreshToken", refreshToken);
+    await AsyncStorage.setItem("userId",userId)
+
+    scheduleTokenRefresh(data.expires_in);
+
     alert("Login success 🎉");
      navigation.navigate("welcome");
   } catch (error) {
