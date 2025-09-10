@@ -21,7 +21,7 @@ public class ProfileController {
      * Create a new user profile
      * POST /api/profile/{userId}
      */
-    @PostMapping("/{userId}")
+    @PostMapping("/create/{userId}")
     public ResponseEntity<?> createProfile(
             @PathVariable String userId,
             @RequestBody UserDetails userDetails) {
@@ -90,7 +90,7 @@ public class ProfileController {
     @PatchMapping("/{userId}/language")
     public ResponseEntity<?> changeLanguage(
             @PathVariable String userId,
-            @RequestBody String languageRequest) {
+            @RequestParam String languageRequest) {
         try {
             boolean updated = profileService.ChangeLanguage(userId,languageRequest);
             if (updated) {

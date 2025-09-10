@@ -3,6 +3,7 @@ package com.Story_Spark.story_spark.Story_Generation.Services;
 import com.Story_Spark.story_spark.Story_Generation.Models.MyStory;
 import com.Story_Spark.story_spark.Story_Generation.Models.StoryDetails;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.ContentNotValideException;
+import com.Story_Spark.story_spark.Story_Generation.MyExceptions.ProfileDosntExistException;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.SavingNewStoryOnDBFailedException;
 import com.Story_Spark.story_spark.Story_Generation.MyExceptions.StoryGenerationFailedException;
 import com.Story_Spark.story_spark.Story_Generation.Outputs.GeneratedStory;
@@ -18,42 +19,62 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.EmptyStackException;
+import java.util.List;
 
 @Service
 public class StoryService {
 
-    @Autowired
-    private MyStoryRepo repo;
+    private final MyStoryRepo repo;
 
     private final ChatClient chatClient;
 
-    public StoryService(ChatClient.Builder builder) {
+    private final ProfileService profileService;
+
+    public StoryService(MyStoryRepo repo, ChatClient.Builder builder, ProfileService profileService) {
+        this.repo = repo;
         this.chatClient = builder
                 .build();
+        this.profileService = profileService;
     }
 
     @Transactional
     public GeneratedStory createStory(String userId, StoryDetails storyDetails){
         if(userId==null||storyDetails==null) throw new IllegalArgumentException();
 
-        String userPrompt = """
-    Please create a children-friendly story with the following details:
+        String language;
+        try {
+            language = profileService.GetStoryLanguage(userId);
+        } catch (ProfileDosntExistException | IllegalArgumentException e) {
+            language = "English";
+        }
 
-    - Character Name: %s
-    - Character Type: %s
-    - Story World: %s
-    """.formatted(
+        String userPrompt = """
+Please create a children-friendly story with the following details:
+
+- Character Name: %s
+- Character Type: %s
+- Story World: %s
+- Story Language: %s
+
+Return ONLY JSON that matches the structure of GeneratedStory.
+""".formatted(
                 storyDetails.characterName(),
                 storyDetails.characterType(),
-                storyDetails.StoryWorld()
+                storyDetails.StoryWorld(),
+                language
         );
         GeneratedStory entity = chatClient.prompt()
                 .user(userPrompt)
                 .system(GenerationSysPrompt.SystemPrompt)
                 .call()
                 .entity(GeneratedStory.class);
+
             if(entity==null) throw new StoryGenerationFailedException();
             if(!ValidateContent(entity.getStory(),entity.getStoryTitle())) throw new ContentNotValideException();
+
+
+        String s = profileService.GetStoryLanguage(userId);
+
 
         MyStory myStory = new MyStory(
                     userId,
@@ -63,7 +84,7 @@ public class StoryService {
                     entity.getStoryTitle(),
                     new Date(),
                     storyDetails.StoryWorld(),
-                    ProfileService.GetStoryLanguage(userId)
+                    language
             );
             publishStory(myStory);
             return entity;
@@ -96,7 +117,12 @@ public class StoryService {
         }
     }
 
-
+public List<MyStory> GetAllStories(String userId){
+        if(userId==null) throw new IllegalArgumentException();
+    List<MyStory> allByUserId = repo.findAllByUserId(userId);
+    if(allByUserId.isEmpty()) throw new ContentNotValideException();
+    return allByUserId;
+}
 
 
 }

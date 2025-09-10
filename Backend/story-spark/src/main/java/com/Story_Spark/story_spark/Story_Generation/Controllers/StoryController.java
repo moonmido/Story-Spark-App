@@ -48,4 +48,21 @@ public class StoryController {
     }
 
 
+    @GetMapping("/get-story")
+    public ResponseEntity<?> GetStories(@RequestParam String userId){
+        try {
+            return ResponseEntity.ok(storyService.GetAllStories(userId));
+        } catch (IllegalArgumentException i) {
+   return ResponseEntity.badRequest().body("userId is null = "+i);
+        }
+     catch (ContentNotValideException c) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Empty List");
+    }
+     catch (Exception e) {
+         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected error");
+    }
+    }
+
+
+
 }

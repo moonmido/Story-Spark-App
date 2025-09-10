@@ -15,11 +15,14 @@ import java.util.Optional;
 @Service
 public class ProfileService {
 
-    @Autowired
-    private static MyProfileRepo repo;
+    private final MyProfileRepo repo;
 
-    @Autowired
-    private MyStoryRepo myStoryRepo;
+    private final MyStoryRepo myStoryRepo;
+
+    public ProfileService(MyProfileRepo repo, MyStoryRepo myStoryRepo) {
+        this.repo = repo;
+        this.myStoryRepo = myStoryRepo;
+    }
 
 
     public MyProfile CreateProfile(UserDetails userDetails,String userId){
@@ -30,7 +33,7 @@ public class ProfileService {
                 userDetails.email(),
                 userDetails.firstname(),
                 userDetails.lastname(),
-                userDetails.Language(),
+                userDetails.language(),
                 CalculateNumberOfStories(userId)
         );
         return repo.save(profile);
@@ -38,7 +41,11 @@ public class ProfileService {
 
     public Long CalculateNumberOfStories(String userId){
         if(userId==null) throw new IllegalArgumentException();
-        return myStoryRepo.countByUserId(userId);
+try {
+    return myStoryRepo.countByUserId(userId);
+} catch (Exception e) {
+    return 0L;
+}
     }
 
     public MyProfile GetProfileStatus(String userId){
@@ -47,16 +54,21 @@ public class ProfileService {
                 .orElseThrow(ProfileDosntExistException::new);
     }
 
-    public boolean updateProfile(String userId,UserDetails userDetails){
-        if(userId==null) throw new IllegalArgumentException();
+    public boolean updateProfile(String userId, UserDetails userDetails) {
+        if (userId == null) throw new IllegalArgumentException();
 
-        Optional<MyProfile> byUserId = repo.findByUserId(userId);
-        if(byUserId.isEmpty()) return false;
-        byUserId.get().setEmail(userDetails.email());
-        byUserId.get().setFirstname(userDetails.firstname());
-        byUserId.get().setLastname(userDetails.lastname());
+        Optional<MyProfile> profileOpt = repo.findByUserId(userId);
+        if (profileOpt.isEmpty()) return false;
+
+        MyProfile profile = profileOpt.get();
+        profile.setEmail(userDetails.email());
+        profile.setFirstname(userDetails.firstname());
+        profile.setLastname(userDetails.lastname());
+        repo.save(profile);
+
         return true;
     }
+
 
     public boolean ChangeLanguage(String userId , String newLanguage){
         if(userId==null ||newLanguage==null) throw new IllegalArgumentException();
@@ -64,10 +76,12 @@ public class ProfileService {
         if(byUserId.isEmpty()) return false;
         byUserId.get()
                 .setPreferredLanguage(newLanguage);
+        repo.save(byUserId.get());
+
         return true;
     }
 
-    public static  String GetStoryLanguage(String userId){
+    public String GetStoryLanguage(String userId){
         if(userId==null) throw new IllegalArgumentException();
         Optional<MyProfile> byUserId = repo.findByUserId(userId);
         if(byUserId.isEmpty()) throw new ProfileDosntExistException();
