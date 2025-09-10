@@ -11,6 +11,8 @@ import com.Story_Spark.story_spark.Story_Generation.Prompts.GenerationSysPrompt;
 import com.Story_Spark.story_spark.Story_Generation.Prompts.ValidatingStoryContentPrompt;
 import com.Story_Spark.story_spark.Story_Generation.Repositories.MyStoryRepo;
 import com.Story_Spark.story_spark.UserProfile.Services.ProfileService;
+import com.Story_Spark.story_spark.User_Auth.MyExceptions.EmailNotVerifiedException;
+import com.Story_Spark.story_spark.User_Auth.Services.AuthService;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,19 +29,23 @@ public class StoryService {
     private final MyStoryRepo repo;
 
     private final ChatClient chatClient;
-
+    private final AuthService authService;
     private final ProfileService profileService;
 
-    public StoryService(MyStoryRepo repo, ChatClient.Builder builder, ProfileService profileService) {
+    public StoryService(MyStoryRepo repo, ChatClient.Builder builder, AuthService authService, ProfileService profileService) {
         this.repo = repo;
         this.chatClient = builder
                 .build();
+        this.authService = authService;
         this.profileService = profileService;
     }
 
     @Transactional
     public GeneratedStory createStory(String userId, StoryDetails storyDetails){
         if(userId==null||storyDetails==null) throw new IllegalArgumentException();
+        if(!authService.IsEmailVerified(userId)){
+            throw new EmailNotVerifiedException();
+        }
 
         String language;
         try {
@@ -119,6 +125,9 @@ Return ONLY JSON that matches the structure of GeneratedStory.
 
 public List<MyStory> GetAllStories(String userId){
         if(userId==null) throw new IllegalArgumentException();
+    if(!authService.IsEmailVerified(userId)){
+        throw new EmailNotVerifiedException();
+    }
     List<MyStory> allByUserId = repo.findAllByUserId(userId);
     if(allByUserId.isEmpty()) throw new ContentNotValideException();
     return allByUserId;

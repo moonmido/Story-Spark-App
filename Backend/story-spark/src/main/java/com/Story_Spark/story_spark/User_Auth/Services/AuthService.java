@@ -138,4 +138,13 @@ public class AuthService {
             return false;
         }
     }
+
+    public boolean IsEmailVerified(String userId){
+        return keycloak.realm(realm).users()
+                .get(userId)
+                .toRepresentation()
+                .isEmailVerified();
+    }
+
+
 }
