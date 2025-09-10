@@ -51,9 +51,9 @@ const Sign_In = () => {
 
     const data = await response.json();
     
-    console.log("Access Token:", data.access_token);
-    await AsyncStorage.setItem("access_token", data.access_token);
-
+    const decoded = jwtDecode(data.access_token);
+    const userId = decoded.sub; 
+    localStorage.setItem("userId",userId)
     alert("Login success 🎉");
      navigation.navigate("welcome");
   } catch (error) {

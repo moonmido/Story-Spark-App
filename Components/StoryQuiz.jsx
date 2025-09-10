@@ -11,15 +11,20 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Button_comp from './Static-Components/Button_comp';
+import { useRoute, useNavigation } from '@react-navigation/native';
 
 const StoryQuiz = () => {
-  const [answers, setAnswers] = useState({
-    question1: null,
-    question2: null,
-    question3: null,
-  });
-
-  const questions = [
+  const route = useRoute();
+  const navigation = useNavigation();
+  
+  // Get the GeneratedStory data from navigation params
+  const { generatedStory } = route.params || {};
+  
+  // Extract questions from the GeneratedStory object
+  const apiQuestions = generatedStory?.questions || [];
+  
+  // Fallback questions if no API data
+  const defaultQuestions = [
     {
       id: 'question1',
       title: 'Question 1',
@@ -49,6 +54,20 @@ const StoryQuiz = () => {
     },
   ];
 
+  // Use API questions if available, otherwise use default
+  const questions = apiQuestions.length > 0 ? apiQuestions : defaultQuestions;
+
+  // Initialize answers state dynamically based on questions
+  const initializeAnswers = () => {
+    const initialAnswers = {};
+    questions.forEach(question => {
+      initialAnswers[question.id] = null;
+    });
+    return initialAnswers;
+  };
+
+  const [answers, setAnswers] = useState(initializeAnswers());
+
   const handleAnswerSelect = (questionId, value) => {
     setAnswers(prev => ({
       ...prev,
@@ -69,11 +88,39 @@ const StoryQuiz = () => {
     }
 
     // Process the quiz results
+    const userAnswers = Object.entries(answers).map(([questionId, selectedValue]) => {
+      const question = questions.find(q => q.id === questionId);
+      const selectedOption = question?.options.find(option => option.value === selectedValue);
+      return {
+        questionId,
+        question: question?.question,
+        selectedValue,
+        selectedLabel: selectedOption?.label
+      };
+    });
+
+    console.log('Quiz Results:', userAnswers);
+
     Alert.alert(
       'Quiz Submitted!',
       'Thank you for completing the story quiz!',
-      [{ text: 'OK' }]
+      [
+        { 
+          text: 'OK', 
+          onPress: () => {
+            // Navigate back to story or main screen
+            navigation.navigate('Show_Story', { 
+              story: generatedStory,
+              quizResults: userAnswers 
+            });
+          }
+        }
+      ]
     );
+  };
+
+  const handleBackPress = () => {
+    Alert.alert("You Can't Go Back Until you answer all questions");
   };
 
   const renderQuestion = (questionData) => (
@@ -112,7 +159,7 @@ const StoryQuiz = () => {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={()=>alert("You Can't Go Back Until you answer all questions")}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Story Quiz</Text>
@@ -129,7 +176,12 @@ const StoryQuiz = () => {
 
       {/* Submit Button */}
       <View style={styles.submitContainer}>
-    <Button_comp title={"Submit"} fontColor={"black"} job={""} color={"#38E07A"}/>
+        <Button_comp 
+          title={"Submit"} 
+          fontColor={"black"} 
+          job={handleSubmit} 
+          color={"#38E07A"}
+        />
       </View>
     </SafeAreaView>
   );
