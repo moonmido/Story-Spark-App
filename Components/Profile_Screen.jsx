@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import ProfileService from '../services/ProfileService'; // Adjust the path as needed
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const InputField = ({ label, value, onChangeText, placeholder, ...props }) => (
   <View style={styles.inputContainer}>
@@ -30,16 +33,42 @@ const InputField = ({ label, value, onChangeText, placeholder, ...props }) => (
 );
 
 export default function ProfileScreen() {
-    const navigation = useNavigation();
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  const userId = AsyncStorage.getItem("userId"); 
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      setInitialLoading(true);
+      const profile = await ProfileService.getProfile(userId);
+      setEmail(profile.email || '');
+      setFirstName(profile.firstname || '');
+      setLastName(profile.lastname || '');
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      // If profile doesn't exist, keep the fields empty for user to fill
+      if (!error.message.includes('Profile not found')) {
+        Alert.alert('Error', 'Failed to load profile data');
+      }
+    } finally {
+      setInitialLoading(false);
+    }
+  };
 
   const handleBackPress = () => {
-navigation.navigate("settings")
-};
+    navigation.navigate("settings");
+  };
 
-  const handleUpdateProfile = () => {
+  const handleUpdateProfile = async () => {
     console.log('Update Profile pressed');
     console.log('Profile data:', { email, firstName, lastName });
     
@@ -49,8 +78,50 @@ navigation.navigate("settings")
       return;
     }
 
-    // Handle profile update
-    Alert.alert('Success', 'Profile updated successfully!');
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Try to update the profile first
+      try {
+        await ProfileService.updateProfile(userId, {
+          email: email.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        });
+        Alert.alert('Success', 'Profile updated successfully!');
+      } catch (error) {
+        if (error.message.includes('Profile not found')) {
+          // If profile doesn't exist, create a new one
+          try {
+            await ProfileService.createProfile(userId, {
+              email: email.trim(),
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+              language: 'English' // Default language
+            });
+            Alert.alert('Success', 'Profile created successfully!');
+          } catch (createError) {
+            console.error('Error creating profile:', createError);
+            Alert.alert('Error', 'Failed to create profile. Please try again.');
+          }
+        } else {
+          console.error('Error updating profile:', error);
+          Alert.alert('Error', 'Failed to update profile. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteAccount = () => {
@@ -69,12 +140,26 @@ navigation.navigate("settings")
           style: 'destructive',
           onPress: () => {
             console.log('Account deletion confirmed');
-            // Handle account deletion
+            // Note: You'll need to implement a delete endpoint in your backend
+            // and add it to the ProfileService if you want full delete functionality
+            Alert.alert('Info', 'Account deletion feature will be implemented soon.');
           },
         },
       ]
     );
   };
+
+  if (initialLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#122118" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#38e07b" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,6 +193,7 @@ navigation.navigate("settings")
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
+              editable={!loading}
             />
 
             <InputField
@@ -116,6 +202,7 @@ navigation.navigate("settings")
               onChangeText={setFirstName}
               placeholder="Enter your first name"
               autoCapitalize="words"
+              editable={!loading}
             />
 
             <InputField
@@ -124,6 +211,7 @@ navigation.navigate("settings")
               onChangeText={setLastName}
               placeholder="Enter your last name"
               autoCapitalize="words"
+              editable={!loading}
             />
           </View>
         </ScrollView>
@@ -132,19 +220,25 @@ navigation.navigate("settings")
         <View style={styles.bottomContainer}>
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={styles.updateButton} 
+              style={[styles.updateButton, loading && styles.updateButtonDisabled]} 
               onPress={handleUpdateProfile}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.updateButtonText}>Update Profile</Text>
+              {loading ? (
+                <ActivityIndicator size="small" color="#122118" />
+              ) : (
+                <Text style={styles.updateButtonText}>Update Profile</Text>
+              )}
             </TouchableOpacity>
             
             <TouchableOpacity 
               style={styles.deleteButton} 
               onPress={handleDeleteAccount}
               activeOpacity={0.8}
+              disabled={loading}
             >
-              <Text style={styles.deleteButtonText}>Delete Account</Text>
+              <Text style={[styles.deleteButtonText, loading && styles.deleteButtonTextDisabled]}>Delete Account</Text>
             </TouchableOpacity>
           </View>
           
@@ -190,7 +284,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    marginTop:10,
+    marginTop: 10,
   },
   formContainer: {
     paddingBottom: 20,
@@ -239,6 +333,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 20,
   },
+  updateButtonDisabled: {
+    backgroundColor: '#2a6b43',
+  },
   updateButtonText: {
     color: '#122118',
     fontSize: 16,
@@ -259,8 +356,22 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.015,
   },
+  deleteButtonTextDisabled: {
+    color: '#888888',
+  },
   bottomSpacer: {
     height: 20,
     backgroundColor: '#122118',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#122118',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 12,
   },
 });

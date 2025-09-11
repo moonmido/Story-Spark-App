@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,15 @@ import {
   Alert,
   Modal,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import url from './URL/all_urls.json';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SettingsService from '../services/SettingsService'; // Adjust the path as needed
 
-
-const {width,height} = Dimensions.get("window");
+const {width, height} = Dimensions.get("window");
 
 // Languages list
 const LANGUAGES = [
@@ -37,29 +38,39 @@ const LANGUAGES = [
   { id: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
 ];
 
-const SettingsItem = ({ icon, title, subtitle, onPress, large = false, iconSize = 24, showArrow = false }) => (
-  <TouchableOpacity style={[styles.settingsItem, large && styles.settingsItemLarge]} onPress={onPress}>
+const SettingsItem = ({ icon, title, subtitle, onPress, large = false, iconSize = 24, showArrow = false, disabled = false }) => (
+  <TouchableOpacity 
+    style={[styles.settingsItem, large && styles.settingsItemLarge]} 
+    onPress={onPress}
+    disabled={disabled}
+    activeOpacity={disabled ? 1 : 0.6}
+  >
     <View style={[styles.settingsIcon, large && styles.settingsIconLarge]}>
-      <Ionicons name={icon} size={iconSize} color="#FFFFFF" />
+      <Ionicons name={icon} size={iconSize} color={disabled ? "#666666" : "#FFFFFF"} />
     </View>
     <View style={styles.settingsContent}>
-      <Text style={styles.settingsTitle}>{title}</Text>
-      {subtitle && <Text style={styles.settingsSubtitle}>{subtitle}</Text>}
+      <Text style={[styles.settingsTitle, disabled && styles.disabledText]}>{title}</Text>
+      {subtitle && <Text style={[styles.settingsSubtitle, disabled && styles.disabledSubtitle]}>{subtitle}</Text>}
     </View>
     {showArrow && (
-      <Ionicons name="chevron-forward" size={20} color="#96c5a9" />
+      <Ionicons name="chevron-forward" size={20} color={disabled ? "#666666" : "#96c5a9"} />
     )}
   </TouchableOpacity>
 );
 
-const LogoutItem = ({ onPress }) => (
-  <TouchableOpacity style={styles.logoutItem} onPress={onPress}>
+const LogoutItem = ({ onPress, disabled = false }) => (
+  <TouchableOpacity 
+    style={styles.logoutItem} 
+    onPress={onPress}
+    disabled={disabled}
+    activeOpacity={disabled ? 1 : 0.6}
+  >
     <View style={styles.logoutIcon}>
-      <Ionicons name="log-out-outline" size={24} color="#FF4444" />
+      <Ionicons name="log-out-outline" size={24} color={disabled ? "#AA6666" : "#FF4444"} />
     </View>
     <View style={styles.settingsContent}>
-      <Text style={styles.logoutTitle}>Logout</Text>
-      <Text style={styles.logoutSubtitle}>Sign out of your account</Text>
+      <Text style={[styles.logoutTitle, disabled && styles.disabledLogoutTitle]}>Logout</Text>
+      <Text style={[styles.logoutSubtitle, disabled && styles.disabledLogoutSubtitle]}>Sign out of your account</Text>
     </View>
   </TouchableOpacity>
 );
@@ -84,29 +95,108 @@ const SectionHeader = ({ title }) => (
 );
 
 export default function SettingsScreen() {
-    const navigation = useNavigation();
-    const [selectedLanguage, setSelectedLanguage] = useState('en'); // Default to English
-    const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const navigation = useNavigation();
+  const [selectedLanguage, setSelectedLanguage] = useState('en'); // Default to English
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setInitialLoading(true);
+            const storedUserId = await AsyncStorage.getItem('userId');
+      if (storedUserId) {
+        setUserId(storedUserId);
+        await loadUserLanguage(storedUserId);
+      } else {
+        // Handle case where userId is not found
+        console.log('No userId found in storage');
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  const loadUserLanguage = async (userIdToUse) => {
+    try {
+      const profile = await SettingsService.getProfile(userIdToUse);
+      const languageCode = SettingsService.mapLanguageNameToCode(profile.preferredLanguage);
+      setSelectedLanguage(languageCode);
+      
+      // Also save to AsyncStorage for offline use
+      await AsyncStorage.setItem('selectedLanguage', languageCode);
+    } catch (error) {
+      console.error('Error loading user language:', error);
+      // If profile doesn't exist, use default language
+      if (!error.message.includes('Profile not found')) {
+        // Only show alert for unexpected errors
+        Alert.alert('Info', 'Using default language settings');
+      }
+    }
+  };
+
   const handleBackPress = () => {
-    navigation.navigate("welcome")
+    navigation.navigate("welcome");
   };
 
   const handleProfilePress = () => {
     console.log('Profile pressed');
-    // Navigate to profile screen
+    navigation.navigate("profile"); // Navigate to profile screen
   };
 
   const handleLanguagePress = () => {
+    if (!userId) {
+      Alert.alert('Error', 'Please log in to change language settings');
+      return;
+    }
     setShowLanguageModal(true);
   };
 
-  const handleLanguageSelect = (language) => {
-    setSelectedLanguage(language.id);
-    setShowLanguageModal(false);
-    console.log('Language changed to:', language.name);
-    // Add your language change logic here
-    // Save to AsyncStorage, update app language, etc.
+  const handleLanguageSelect = async (language) => {
+    if (!userId) {
+      Alert.alert('Error', 'Please log in to change language settings');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setShowLanguageModal(false);
+      
+      // Update language in backend
+      const languageName = SettingsService.mapLanguageCodeToName(language.id);
+      await SettingsService.changeLanguage(userId, languageName);
+      
+      // Update local state
+      setSelectedLanguage(language.id);
+      
+      // Save to AsyncStorage for offline use
+      await AsyncStorage.setItem('selectedLanguage', language.id);
+      
+      console.log('Language changed to:', language.name);
+      Alert.alert('Success', `Language changed to ${language.name}`);
+    } catch (error) {
+      console.error('Error changing language:', error);
+      Alert.alert('Error', 'Failed to update language. Please try again.');
+      
+      // Revert to previous selection on error
+      try {
+        const profile = await SettingsService.getProfile(userId);
+        const currentLanguageCode = SettingsService.mapLanguageNameToCode(profile.preferredLanguage);
+        setSelectedLanguage(currentLanguageCode);
+      } catch (revertError) {
+        console.error('Error reverting language:', revertError);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getCurrentLanguage = () => {
@@ -116,11 +206,13 @@ export default function SettingsScreen() {
   const handleHelpPress = () => {
     console.log('Help pressed');
     // Navigate to help screen
+    Alert.alert('Help', 'Help feature coming soon!');
   };
 
   const handleContactPress = () => {
     console.log('Contact Us pressed');
     // Navigate to contact screen
+    Alert.alert('Contact Us', 'Contact feature coming soon!');
   };
 
   const handleLogoutPress = () => {
@@ -135,10 +227,22 @@ export default function SettingsScreen() {
         {
           text: "Yes",
           style: "destructive",
-          onPress: () => {
-            console.log('User logged out');
-             AsyncStorage.removeItem("access_token")
-            navigation.navigate("signin"); 
+          onPress: async () => {
+            try {
+              setLoading(true);
+              console.log('User logged out');
+              
+              // Clear all stored data
+              await AsyncStorage.multiRemove(['access_token', 'userId', 'selectedLanguage']);
+              
+              // Navigate to signin
+              navigation.navigate("signin");
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Alert.alert('Error', 'Failed to logout properly. Please try again.');
+            } finally {
+              setLoading(false);
+            }
           }
         }
       ],
@@ -146,9 +250,29 @@ export default function SettingsScreen() {
     );
   };
 
+  if (initialLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#122118" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#38e07b" />
+          <Text style={styles.loadingText}>Loading settings...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#122118" />
+      
+      {/* Loading Overlay */}
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#38e07b" />
+          <Text style={styles.loadingText}>Updating...</Text>
+        </View>
+      )}
       
       {/* Header */}
       <View style={styles.header}>
@@ -174,6 +298,7 @@ export default function SettingsScreen() {
           onPress={handleLanguagePress}
           large={true}
           showArrow={true}
+          disabled={loading || !userId}
         />
 
         {/* Support Section */}
@@ -193,7 +318,7 @@ export default function SettingsScreen() {
 
         {/* Logout Section */}
         <SectionHeader title="Account Actions" />
-        <LogoutItem onPress={handleLogoutPress} />
+        <LogoutItem onPress={handleLogoutPress} disabled={loading} />
         
         {/* Add some bottom padding */}
         <View style={{ height: 30 }} />
@@ -229,9 +354,10 @@ export default function SettingsScreen() {
                     selectedLanguage === item.id && styles.selectedLanguageItem
                   ]}
                   onPress={() => handleLanguageSelect(item)}
+                  disabled={loading}
                 >
                   <Text style={styles.languageFlag}>{item.flag}</Text>
-                  <Text style={styles.languageName}>{item.name}</Text>
+                  <Text style={[styles.languageName, loading && styles.disabledText]}>{item.name}</Text>
                   {selectedLanguage === item.id && (
                     <Ionicons name="checkmark" size={20} color="#4CAF50" />
                   )}
@@ -270,14 +396,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 20,
     fontWeight: 'bold',
-    marginLeft:6,
+    marginLeft: 6,
     textAlign: 'center',
   },
   headerSpacer: {
     width: 48,
   },
   content: {
-    marginLeft:width*0.02,
+    marginLeft: width * 0.02,
     flex: 1,
   },
   sectionHeader: {
@@ -445,5 +571,40 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '500',
     flex: 1,
+  },
+  // Loading and disabled states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#122118',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(18, 33, 24, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 12,
+  },
+  disabledText: {
+    color: '#666666',
+  },
+  disabledSubtitle: {
+    color: '#555555',
+  },
+  disabledLogoutTitle: {
+    color: '#AA6666',
+  },
+  disabledLogoutSubtitle: {
+    color: '#996666',
   },
 });

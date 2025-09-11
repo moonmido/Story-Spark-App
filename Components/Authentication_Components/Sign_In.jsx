@@ -53,6 +53,7 @@ const Sign_In = () => {
 
     const data = await response.json();
     
+    AsyncStorage.setItem("access_token",data.access_token);
     const decoded = jwtDecode(data.access_token);
     const userId = decoded.sub; 
     const refreshToken = data.refresh_token;
